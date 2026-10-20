@@ -1,0 +1,83 @@
+# ==============================================================================
+# Git Ignore - AI Video Clipper
+# ==============================================================================
+
+# Environment variables & API credentials (CRITICAL: NEVER COMMIT)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+credentials.json
+client_secrets.json
+
+# Local workspace folder backups
+cliping op/
+cliping op - Copy/
+_backup/
+_backup*/
+
+# Media output, render jobs & large assets
+jobs/
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.wav
+*.mp3
+*.aac
+*.ass
+*.srt
+*.vtt
+
+# Python & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Whisper model cache
+whisper_models/
+.cache/
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
