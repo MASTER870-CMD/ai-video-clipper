@@ -1,378 +1,493 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>AI Video Clipper – Long-Form to Viral Shorts</title>
-  <style>
-    :root {
-      --bg: #0b0f17;
-      --card: #131a26;
-      --card-border: #1e293b;
-      --ink: #f1f5f9;
-      --mute: #94a3b8;
-      --red: #ef4444;
-      --red-hover: #dc2626;
-      --red-glow: rgba(239, 68, 68, 0.25);
-      --line: #2d3748;
-      --radius: 10px;
-    }
-    @media(prefers-color-scheme:light) {
-      :root {
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --card-border: #e2e8f0;
-        --ink: #0f172a;
-        --mute: #64748b;
-        --red: #e11d48;
-        --red-hover: #be123c;
-        --line: #cbd5e1;
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      min-height: 100vh;
-    }
-    main {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 56px 20px 80px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-radius: 9999px;
-      background: var(--red-glow);
-      color: var(--red);
-      border: 1px solid var(--red);
-      margin-bottom: 16px;
-    }
-    h1 {
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin: 0 0 12px;
-    }
-    p.sub {
-      color: var(--mute);
-      margin: 0 0 32px;
-      max-width: 60ch;
-      font-size: 1.1rem;
-    }
-    form {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      background: var(--card);
-      padding: 8px;
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    input {
-      flex: 1 1 340px;
-      padding: 14px 18px;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--ink);
-      font: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input:focus {
-      border-color: var(--red);
-    }
-    button {
-      padding: 14px 28px;
-      border: 0;
-      border-radius: 8px;
-      background: var(--red);
-      color: #fff;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-    button:hover:not(:disabled) {
-      background: var(--red-hover);
-      transform: translateY(-1px);
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    #status {
-      margin-top: 32px;
-      display: none;
-      background: var(--card);
-      padding: 20px;
-      border-radius: var(--radius);
-      border: 1px solid var(--card-border);
-    }
-    .bar {
-      height: 10px;
-      background: var(--line);
-      border-radius: 5px;
-      overflow: hidden;
-    }
-    .bar i {
-      display: block;
-      height: 100%;
-      width: 0;
-      background: var(--red);
-      transition: width 0.4s ease;
-    }
-    #stage {
-      margin: 12px 0 0;
-      color: var(--mute);
-      font-size: 0.95rem;
-      font-weight: 500;
-    }
-    #tl {
-      display: none;
-      margin: 36px 0 12px;
-    }
-    #tl h2, #clips h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin: 0 0 12px;
-    }
-    .track {
-      position: relative;
-      height: 48px;
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .seg {
-      position: absolute;
-      top: 4px;
-      bottom: 4px;
-      background: var(--red);
-      border-radius: 6px;
-      min-width: 8px;
-      color: #fff;
-      font: 700 0.8rem/40px system-ui;
-      text-align: center;
-      overflow: hidden;
-      box-shadow: 0 2px 8px var(--red-glow);
-    }
-    .ends {
-      display: flex;
-      justify-content: space-between;
-      color: var(--mute);
-      font-size: 0.85rem;
-      margin-top: 6px;
-      font-family: monospace;
-    }
-    #clips {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 20px;
-      margin-top: 28px;
-    }
-    .clip {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      transition: transform 0.2s;
-    }
-    .clip:hover {
-      transform: translateY(-2px);
-    }
-    .thumb {
-      aspect-ratio: 9/16;
-      background: #000;
-      display: grid;
-      place-items: center;
-      color: var(--mute);
-      font-size: 0.9rem;
-      position: relative;
-    }
-    .thumb video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .info {
-      padding: 14px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .time {
-      font: 700 0.95rem monospace;
-      color: var(--red);
-    }
-    .info b {
-      font-size: 1rem;
-      line-height: 1.3;
-    }
-    .info small {
-      color: var(--mute);
-      font-size: 0.85rem;
-      line-height: 1.4;
-    }
-    .row {
-      display: flex;
-      gap: 8px;
-      margin-top: auto;
-      padding-top: 12px;
-    }
-    .row a, .row button {
-      flex: 1;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-align: center;
-      border-radius: 6px;
-      text-decoration: none;
-    }
-    .row a {
-      background: var(--red);
-      color: #fff;
-      border: 0;
-    }
-    .row button {
-      background: transparent;
-      border: 1px solid var(--card-border);
-      color: var(--mute);
-    }
-    #err {
-      color: var(--red);
-      margin-top: 14px;
-      font-weight: 500;
-    }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Cliping – Turn Long Videos into Viral Shorts</title>
+    <meta name="description"
+        content="Login with YouTube, create viral shorts from long videos, and publish directly to your channel.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg2: #111827;
+            --surface: #151d2b;
+            --surface2: #1e2a3a;
+            --ink: #e7edf3;
+            --ink2: #c3cdd9;
+            --mute: #6b7a8d;
+            --border: #232f40;
+            --accent: #e5383b;
+            --accent-glow: rgba(229, 56, 59, .25);
+            --gradient: linear-gradient(135deg, #e5383b 0%, #ff6b35 100%);
+            --success: #10b981;
+            --yt: #ff0000;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .35)
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0 }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: 'Inter', system-ui, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(229, 56, 59, .07) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(102, 126, 234, .05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        /* ── Header ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10, 14, 23, .82);
+            backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px
+        }
+        .hdr { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 60px }
+        .logo { font-weight: 900; font-size: 1.4rem; letter-spacing: -.03em; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text }
+        #navR { display: flex; align-items: center; gap: 14px }
+        .login-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; background: var(--yt); color: #fff; border: 0; border-radius: 8px; font: 600 .85rem 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: .2s }
+        .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(255, 0, 0, .35) }
+        .pill { display: flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 28px; cursor: pointer; position: relative }
+        .pill img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover }
+        .pill span { font-size: .82rem; font-weight: 600 }
+        .pill-menu { position: absolute; top: 110%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; min-width: 160px; display: none; box-shadow: var(--shadow) }
+        .pill-menu.show { display: block }
+        .pill-menu a { display: block; padding: 9px 12px; color: var(--ink); text-decoration: none; border-radius: 8px; font-size: .82rem; transition: .15s }
+        .pill-menu a:hover { background: var(--surface2) }
+
+        main { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 28px 24px 60px }
+
+        /* ── Hero ── */
+        .hero { text-align: center; padding: 72px 16px 60px }
+        .hero h1 { font: 900 clamp(2.2rem, 5.5vw, 3.6rem)/1.06 'Inter', sans-serif; letter-spacing: -.04em; margin-bottom: 14px }
+        .hero .grad { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text }
+        .hero p { color: var(--mute); font-size: 1.1rem; max-width: 50ch; margin: 0 auto 36px }
+        .cta { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; background: var(--yt); color: #fff; border: 0; border-radius: 12px; font: 700 1.05rem 'Inter', sans-serif; cursor: pointer; text-decoration: none; transition: .3s; box-shadow: 0 4px 22px rgba(255,0,0,.25) }
+        .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,0,0,.4) }
+        .cta svg { width: 22px; height: 22px }
+        .feat { display: flex; justify-content: center; gap: 32px; margin-top: 48px; flex-wrap: wrap }
+        .feat-item { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: .88rem }
+        .feat-item .ic { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; font-size: 1.1rem }
+
+        /* ── Section ── */
+        .stitle { font: 700 1.15rem 'Inter', sans-serif; margin-bottom: 16px; display: flex; align-items: center; gap: 10px }
+        .badge { background: var(--surface); color: var(--mute); padding: 3px 10px; border-radius: 12px; font-size: .72rem; font-weight: 600 }
+
+        /* ── Videos grid ── */
+        .vids { margin-bottom: 36px }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px }
+        .vcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: .2s; text-decoration: none; color: inherit; display: flex; flex-direction: column }
+        .vcard:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,.25) }
+        .vthumb { aspect-ratio: 16/9; background: var(--bg); overflow: hidden; position: relative }
+        .vthumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s }
+        .vcard:hover .vthumb img { transform: scale(1.06) }
+        .vmeta { padding: 10px 12px; flex: 1 }
+        .vmeta h3 { font-size: .8rem; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px }
+        .vmeta time { color: var(--mute); font-size: .7rem }
+        .vstats { display: flex; gap: 12px; padding: 0 12px 10px; font-size: .72rem; color: var(--mute) }
+        .vstats span { display: flex; align-items: center; gap: 3px }
+        .vcmt-btn { background: none; border: 1px solid var(--border); color: var(--ink2); border-radius: 6px; padding: 5px 10px; font: 600 .7rem 'Inter', sans-serif; cursor: pointer; margin: 0 12px 10px; transition: .15s }
+        .vcmt-btn:hover { background: var(--surface2); border-color: var(--ink2) }
+
+        /* ── Create section ── */
+        .create { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 28px }
+        .create h2 { font: 800 clamp(1.3rem, 3vw, 1.8rem)/1.1 'Inter', sans-serif; letter-spacing: -.02em; margin-bottom: 4px }
+        .create .sub { color: var(--mute); margin-bottom: 20px; font-size: .9rem }
+        .frow { display: flex; gap: 10px; flex-wrap: wrap }
+        .frow input, .frow select { padding: 12px 14px; border: 2px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--ink); font: .9rem 'Inter', sans-serif; transition: border-color .2s }
+        .frow input { flex: 1 1 300px }
+        .frow select { cursor: pointer }
+        .frow input:focus, .frow select:focus { outline: none; border-color: var(--accent) }
+        .btn1 { padding: 12px 22px; border: 0; border-radius: 10px; background: var(--gradient); color: #fff; font: 700 .9rem 'Inter', sans-serif; cursor: pointer; transition: .2s }
+        .btn1:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 18px var(--accent-glow) }
+        .btn1:disabled { opacity: .5; cursor: not-allowed }
+
+        /* ── Progress ── */
+        #status { margin-top: 20px; display: none }
+        .pbar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden }
+        .pbar .fill { display: block; height: 100%; width: 0; background: var(--gradient); transition: width .6s; border-radius: 3px }
+        #stage { margin: 6px 0 0; color: var(--mute); font-size: .85rem }
+        #times { margin: 6px 0 0; color: var(--mute); font-size: .8rem; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+        #times b { color: var(--ink); font-family: 'Cascadia Mono', Consolas, monospace; font-weight: 700 }
+        #err { color: var(--accent); margin-top: 12px; font-size: .88rem }
+
+        /* ── Clips grid ── */
+        #clips { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 20px }
+        .clip { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: .2s }
+        .clip:hover { border-color: var(--accent); transform: translateY(-2px) }
+        .cthumb { aspect-ratio: 9/16; background: var(--bg); display: grid; place-items: center; color: var(--mute); font-size: .82rem }
+        .cthumb video { width: 100%; height: 100%; object-fit: cover }
+        .cinfo { padding: 12px }
+        .tbadge { font: 700 .85rem 'Cascadia Mono', Consolas, monospace; color: var(--accent) }
+        .cinfo h3 { font-size: .85rem; font-weight: 600; margin: 5px 0 3px; line-height: 1.3 }
+        .cinfo small { color: var(--mute); font-size: .74rem }
+        .cacts { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 7px; margin-top: auto }
+        .bdl { display: block; padding: 9px; text-align: center; border-radius: 8px; text-decoration: none; border: 1px solid var(--border); color: var(--ink); font: 600 .78rem 'Inter', sans-serif; transition: .15s }
+        .bdl:hover { background: var(--surface2); border-color: var(--ink2) }
+        .byt { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px; border-radius: 8px; border: 0; background: var(--yt); color: #fff; font: 600 .78rem 'Inter', sans-serif; cursor: pointer; transition: .2s }
+        .byt:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(255,0,0,.3) }
+        .byt:disabled { opacity: .5; cursor: not-allowed }
+        .byt svg { width: 15px; height: 15px }
+        .up-ok { padding: 9px; text-align: center; background: rgba(16,185,129,.08); border: 1px solid var(--success); border-radius: 8px; font-size: .78rem; color: var(--success) }
+        .up-ok a { color: var(--success); font-weight: 700 }
+
+        /* ── Modals ── */
+        .moverlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); display: none; place-items: center; z-index: 200 }
+        .moverlay.show { display: grid }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; max-width: 500px; width: 92%; box-shadow: 0 20px 48px rgba(0,0,0,.45); animation: modalIn .25s ease; max-height: 85vh; overflow-y: auto }
+        @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.97) } }
+        .modal h3 { font-size: 1.1rem; margin-bottom: 18px; display: flex; align-items: center; gap: 9px }
+        .modal label { display: block; color: var(--mute); font-size: .8rem; font-weight: 600; margin-bottom: 5px }
+        .modal input, .modal textarea, .modal select { width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 10px; background: var(--bg2); color: var(--ink); font: .88rem 'Inter', sans-serif; margin-bottom: 14px; resize: vertical }
+        .modal input:focus, .modal textarea:focus, .modal select:focus { outline: none; border-color: var(--accent) }
+        .macts { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px }
+        .bcn { padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px; background: 0; color: var(--ink); font: 600 .82rem 'Inter', sans-serif; cursor: pointer }
+        .bup { padding: 9px 22px; border: 0; border-radius: 8px; background: var(--yt); color: #fff; font: 700 .82rem 'Inter', sans-serif; cursor: pointer; transition: .2s }
+        .bup:disabled { opacity: .5; cursor: not-allowed }
+
+        /* AI SEO button */
+        .ai-btn { display: flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1px solid #7c3aed; border-radius: 8px; background: rgba(124,58,237,.1); color: #a78bfa; font: 600 .8rem 'Inter', sans-serif; cursor: pointer; transition: .2s; margin-bottom: 16px; width: 100% }
+        .ai-btn:hover { background: rgba(124,58,237,.2); border-color: #a78bfa }
+        .ai-btn:disabled { opacity: .5; cursor: not-allowed }
+        .ai-badge { background: linear-gradient(135deg,#7c3aed,#ec4899); color: #fff; padding: 2px 7px; border-radius: 4px; font-size: .65rem; font-weight: 700 }
+
+        /* Tags input */
+        .tags-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px }
+        .tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: .75rem; color: var(--ink2); display: flex; align-items: center; gap: 4px }
+        .tag .x { cursor: pointer; color: var(--mute); font-weight: 700 }
+        .tag .x:hover { color: var(--accent) }
+
+        /* ── Comments modal ── */
+        .cmt-list { display: flex; flex-direction: column; gap: 12px; max-height: 50vh; overflow-y: auto; padding-right: 4px }
+        .cmt { display: flex; gap: 10px; padding: 10px; background: var(--bg2); border-radius: 10px }
+        .cmt-av { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0 }
+        .cmt-body { flex: 1; min-width: 0 }
+        .cmt-name { font-size: .78rem; font-weight: 600; color: var(--ink2) }
+        .cmt-date { font-size: .68rem; color: var(--mute); margin-left: 8px }
+        .cmt-text { font-size: .82rem; margin-top: 3px; color: var(--ink); word-wrap: break-word }
+        .cmt-likes { font-size: .72rem; color: var(--mute); margin-top: 4px }
+        .no-cmt { text-align: center; color: var(--mute); padding: 24px; font-size: .88rem }
+
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        .skel { background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shim 1.4s infinite; border-radius: var(--radius) }
+        @keyframes shim { to { background-position: -200% 0 } }
+
+        @media(max-width:640px) { main { padding: 16px 14px 40px } .create { padding: 18px } .hero { padding: 40px 12px 32px } }
+    </style>
 </head>
+
 <body>
-  <main>
-    <div class="badge">Next-Gen AI Pipeline</div>
-    <h1>Paste a video. Get viral Shorts.</h1>
-    <p class="sub">Autonomous multimodal pipeline that extracts high-retention hooks, reframes to 9:16 portrait, and synthesizes kinetic karaoke subtitles.</p>
-    
-    <form id="f">
-      <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." required aria-label="YouTube video URL">
-      <button id="go" type="submit">Create Clips</button>
-    </form>
-    
-    <div id="err" role="alert"></div>
-    
-    <section id="status">
-      <div class="bar"><i id="pb"></i></div>
-      <p id="stage">Initializing engine...</p>
-    </section>
-    
-    <section id="tl">
-      <h2>Clip Origin Timeline</h2>
-      <div class="track" id="track"></div>
-      <div class="ends"><span>0:00</span><span id="total"></span></div>
-    </section>
-    
-    <section id="clips" aria-live="polite"></section>
-  </main>
+    <header>
+        <div class="hdr">
+            <div class="logo">Cliping</div>
+            <div id="navR"></div>
+        </div>
+    </header>
 
-  <script>
-    const $ = id => document.getElementById(id);
-    const mmss = t => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
-
-    $("f").onsubmit = async (e) => {
-      e.preventDefault();
-      $("err").textContent = "";
-      $("go").disabled = true;
-      $("clips").innerHTML = "";
-      $("tl").style.display = "none";
-
-      try {
-        const r = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: $("url").value.trim() })
-        });
-        if (!r.ok) {
-          const errData = await r.json();
-          $("err").textContent = errData.detail || "Failed to process video.";
-          $("go").disabled = false;
-          return;
-        }
-        const data = await r.json();
-        $("status").style.display = "block";
-        poll(data.id);
-      } catch (err) {
-        $("err").textContent = "Network error: " + err.message;
-        $("go").disabled = false;
-      }
-    };
-
-    async function poll(id) {
-      try {
-        const res = await fetch("/api/jobs/" + id);
-        if (!res.ok) throw new Error("Could not fetch job status");
-        const j = await res.json();
-        
-        $("pb").style.width = j.progress + "%";
-        $("stage").textContent = j.status === "error" ? "" : `${j.stage} (${j.progress}%)`;
-        
-        if (j.clips && j.clips.length) {
-          show(j);
-        }
-        
-        if (j.status === "error") {
-          $("err").textContent = "Error: " + j.error;
-          $("go").disabled = false;
-          return;
-        }
-        if (j.status === "done") {
-          $("go").disabled = false;
-          return;
-        }
-        setTimeout(() => poll(id), 2000);
-      } catch (err) {
-        $("err").textContent = "Polling error: " + err.message;
-        $("go").disabled = false;
-      }
-    }
-
-    function show(j) {
-      $("tl").style.display = "block";
-      $("total").textContent = mmss(j.duration);
-      $("track").innerHTML = j.clips.map(c =>
-        `<div class="seg" style="left:${(c.start / j.duration) * 100}%;width:${((c.end - c.start) / j.duration) * 100}%">${c.id}</div>`
-      ).join("");
-      
-      $("clips").innerHTML = j.clips.map(c => `
-        <article class="clip">
-          <div class="thumb">
-            ${c.file ? `<video src="${c.file}" controls playsinline preload="metadata"></video>` : `<span>Rendering clip ${c.id}...</span>`}
-          </div>
-          <div class="info">
-            <div class="time">${mmss(c.start)} – ${mmss(c.end)}</div>
-            <b>${c.title}</b>
-            <small>Score: ${c.score}/100 · ${c.reason}</small>
-            <div class="row">
-              ${c.file ? `<a href="${c.file}" download="clip_${c.id}.mp4">Download</a>` : ""}
-              <button disabled title="OAuth auto-publish available in prototype branch">Post to Shorts</button>
+    <main>
+        <!-- ── Hero ── -->
+        <div id="hero" class="hero" style="display:none">
+            <h1>Turn Long Videos into<br><span class="grad">Viral Shorts</span></h1>
+            <p>Login with your YouTube account to create clips and post them directly to your channel with one click.</p>
+            <a href="/auth/login" class="cta">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418c-.86.23-1.538.908-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814c.23.86.908 1.538 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.505 2.505 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L16 12l-6 3.464z"/></svg>
+                Sign in with YouTube
+            </a>
+            <div class="feat">
+                <div class="feat-item"><span class="ic">🎬</span> AI-powered clipping</div>
+                <div class="feat-item"><span class="ic">💬</span> Auto captions</div>
+                <div class="feat-item"><span class="ic">🚀</span> One-click post</div>
+                <div class="feat-item"><span class="ic">🎵</span> Beat-synced</div>
             </div>
-          </div>
-        </article>
-      `).join("");
-    }
-  </script>
+        </div>
+
+        <!-- ── Dashboard ── -->
+        <div id="dash" style="display:none">
+            <section class="vids">
+                <div class="stitle">Your YouTube Videos <span class="badge" id="vcnt">Loading…</span></div>
+                <div class="vgrid" id="vgrid"></div>
+            </section>
+
+            <section class="create">
+                <h2>Create Clips</h2>
+                <p class="sub">Paste a YouTube link or local MP4 path — we find the best hooks, cut vertical clips and add animated captions.</p>
+                <form id="f" class="frow">
+                    <input id="url" placeholder="YouTube link or local video path (e.g. C:\videos\test.mp4)..." required aria-label="Video link or path">
+                    <select id="lang" aria-label="Spoken language">
+                        <option value="auto">Auto-detect</option>
+                        <option value="tamil">Tamil</option>
+                        <option value="telugu">Telugu</option>
+                        <option value="hindi">Hindi</option>
+                        <option value="malayalam">Malayalam</option>
+                        <option value="kannada">Kannada</option>
+                        <option value="english">English</option>
+                    </select>
+                    <button type="submit" class="btn1" id="go">Create clips</button>
+                </form>
+                <div id="err" role="alert"></div>
+                <section id="status">
+                    <div class="pbar"><i id="pb" class="fill"></i></div>
+                    <p id="stage"></p>
+                    <p id="times"><span>Elapsed: <b id="elapsed">0s</b></span><span>Time left: <b id="left">estimating…</b></span></p>
+                </section>
+            </section>
+
+            <section id="clips" aria-live="polite"></section>
+        </div>
+    </main>
+
+    <!-- ── Upload modal ── -->
+    <div class="moverlay" id="umod">
+        <div class="modal">
+            <h3>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff0000"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418c-.86.23-1.538.908-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814c.23.86.908 1.538 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.505 2.505 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L16 12l-6 3.464z"/></svg>
+                Post to YouTube
+            </h3>
+            <button class="ai-btn" id="aiBtn" onclick="genSeo()">
+                <span class="ai-badge">AI</span>
+                ✨ Auto-generate viral title, description &amp; tags
+            </button>
+            <label for="uTitle">Title</label>
+            <input id="uTitle" placeholder="Short title for your clip" maxlength="100">
+            <label for="uDesc">Description</label>
+            <textarea id="uDesc" rows="4" placeholder="Description with hashtags"></textarea>
+            <label>Tags</label>
+            <div class="tags-wrap" id="tagsWrap"></div>
+            <input id="tagInput" placeholder="Type a tag and press Enter" style="margin-bottom:14px">
+            <label for="uPriv">Privacy</label>
+            <select id="uPriv">
+                <option value="private">Private — only you can see it</option>
+                <option value="unlisted">Unlisted — anyone with the link</option>
+                <option value="public">Public — visible to everyone</option>
+            </select>
+            <div class="macts">
+                <button class="bcn" onclick="closeM()">Cancel</button>
+                <button class="bup" id="ubtn" onclick="doUpload()">Upload to YouTube</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Comments modal ── -->
+    <div class="moverlay" id="cmtMod">
+        <div class="modal" style="max-width:560px">
+            <h3 id="cmtTitle">💬 Comments</h3>
+            <div id="cmtList" class="cmt-list"></div>
+            <div class="macts" style="margin-top:14px"><button class="bcn" onclick="closeCmt()">Close</button></div>
+        </div>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const mmss = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+        const fmt = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? h + 'h ' + m + 'm' : m ? m + 'm ' + String(x).padStart(2, '0') + 's' : x + 's' };
+        const fmtN = n => { n = parseInt(n || 0); return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n) };
+        const ytSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418c-.86.23-1.538.908-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814c.23.86.908 1.538 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.505 2.505 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L16 12l-6 3.464z"/></svg>`;
+
+        let user = null, jobId = null, videoTitle = '', upTgt = null, seoTags = [];
+        let startedAt = 0, etaEnd = 0, timer = null, finished = false, cards = {};
+
+        /* ── Auth ── */
+        async function checkAuth() {
+            try { const d = await (await fetch('/api/me')).json(); if (d.logged_in) { user = d.user; showDash() } else showHero() } catch { showHero() }
+        }
+        function showHero() {
+            $('hero').style.display = 'block'; $('dash').style.display = 'none';
+            $('navR').innerHTML = `<a href="/auth/login" class="login-btn">${ytSVG} Sign in</a>`;
+        }
+        function showDash() {
+            $('hero').style.display = 'none'; $('dash').style.display = 'block';
+            const pic = user.picture ? `<img src="${user.picture}" alt="" onerror="this.style.display='none'">` : '';
+            $('navR').innerHTML = `<div class="pill" onclick="this.querySelector('.pill-menu').classList.toggle('show')">${pic}<span>${user.name || 'User'}</span><div class="pill-menu"><a href="/auth/logout">Sign out</a></div></div>`;
+            loadVids();
+        }
+
+        /* ── My videos with stats ── */
+        async function loadVids() {
+            const g = $('vgrid');
+            g.innerHTML = Array(4).fill('<div class="skel" style="aspect-ratio:16/9"></div>').join('');
+            try {
+                const d = await (await fetch('/api/my-videos')).json();
+                const items = d.items || [];
+                $('vcnt').textContent = items.length + ' videos';
+                if (!items.length) { g.innerHTML = '<p style="color:var(--mute);grid-column:1/-1">No videos on your channel yet.</p>'; return }
+                g.innerHTML = items.map(v => {
+                    const s = v.snippet, st = v.statistics || {},
+                        th = s.thumbnails?.medium?.url || s.thumbnails?.default?.url || '',
+                        dt = new Date(s.publishedAt).toLocaleDateString(),
+                        vid = v.id?.videoId || v.id;
+                    return `<div class="vcard">
+                        <a href="https://youtube.com/watch?v=${vid}" target="_blank" style="text-decoration:none;color:inherit">
+                            <div class="vthumb"><img src="${th}" alt="" loading="lazy"></div>
+                            <div class="vmeta"><h3>${s.title}</h3><time>${dt}</time></div>
+                        </a>
+                        <div class="vstats">
+                            <span>👁 ${fmtN(st.viewCount)} views</span>
+                            <span>👍 ${fmtN(st.likeCount)}</span>
+                            <span>💬 ${fmtN(st.commentCount)}</span>
+                        </div>
+                        <button class="vcmt-btn" onclick="openCmt('${vid}','${s.title.replace(/'/g,"\\'")}')">View comments</button>
+                    </div>`;
+                }).join('');
+            } catch { g.innerHTML = '<p style="color:var(--mute);grid-column:1/-1">Could not load videos.</p>' }
+        }
+
+        /* ── Comments modal ── */
+        async function openCmt(vid, title) {
+            $('cmtTitle').textContent = '💬 ' + title;
+            $('cmtList').innerHTML = '<div style="text-align:center;padding:24px"><span class="spinner"></span> Loading…</div>';
+            $('cmtMod').classList.add('show');
+            try {
+                const d = await (await fetch('/api/video-comments/' + vid)).json();
+                const items = d.items || [];
+                if (!items.length) { $('cmtList').innerHTML = '<div class="no-cmt">No comments yet.</div>'; return }
+                $('cmtList').innerHTML = items.map(c => {
+                    const s = c.snippet.topLevelComment.snippet;
+                    const ago = new Date(s.publishedAt).toLocaleDateString();
+                    return `<div class="cmt">
+                        <img class="cmt-av" src="${s.authorProfileImageUrl || ''}" alt="" onerror="this.style.display='none'">
+                        <div class="cmt-body">
+                            <span class="cmt-name">${s.authorDisplayName}</span><span class="cmt-date">${ago}</span>
+                            <div class="cmt-text">${s.textDisplay}</div>
+                            <div class="cmt-likes">👍 ${s.likeCount || 0}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) { $('cmtList').innerHTML = `<div class="no-cmt">Could not load comments.</div>` }
+        }
+        function closeCmt() { $('cmtMod').classList.remove('show') }
+        $('cmtMod').onclick = e => { if (e.target === $('cmtMod')) closeCmt() };
+
+        /* ── Clip creation ── */
+        $('f').onsubmit = async e => {
+            e.preventDefault(); $('err').textContent = ''; $('go').disabled = true;
+            $('clips').innerHTML = ''; cards = {}; clearInterval(timer);
+            const r = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: $('url').value, language: $('lang').value }) });
+            if (!r.ok) { $('err').textContent = (await r.json()).detail; $('go').disabled = false; return }
+            const { id } = await r.json(); jobId = id;
+            startedAt = Date.now(); etaEnd = 0; finished = false;
+            $('status').style.display = 'block'; tick(); timer = setInterval(tick, 1000); poll(id);
+        };
+        function tick() { const n = Date.now(); $('elapsed').textContent = fmt((n - startedAt) / 1000); if (finished) return; if (!etaEnd) { $('left').textContent = 'estimating…'; return } const r = (etaEnd - n) / 1000; $('left').textContent = r > 0 ? 'about ' + fmt(r) : 'almost done' }
+        function finish() { finished = true; clearInterval(timer); tick() }
+        function estimate(p) { const e = (Date.now() - startedAt) / 1000; if (p < 5 || e < 5) return; const n = Date.now() + (e * 100 / p - e) * 1000; etaEnd = etaEnd ? (etaEnd + n) / 2 : n }
+
+        async function poll(id) {
+            const j = await (await fetch('/api/jobs/' + id)).json();
+            $('pb').style.width = j.progress + '%'; showClips(j);
+            videoTitle = j.video_title || '';
+            if (j.status == 'error') { finish(); $('left').textContent = 'stopped'; $('stage').textContent = ''; $('err').textContent = 'Error: ' + j.error; $('go').disabled = false; return }
+            $('stage').textContent = j.stage;
+            if (j.status == 'done') { finish(); $('left').textContent = 'done'; $('go').disabled = false; return }
+            estimate(j.progress); setTimeout(() => poll(id), 2000);
+        }
+
+        function esc(s) { return s.replace(/'/g, "\\'").replace(/"/g, '&quot;') }
+
+        function showClips(j) {
+            for (const c of j.clips) {
+                const key = c.file || 'pending';
+                let el = cards[c.id];
+                if (!el) {
+                    el = document.createElement('article'); el.className = 'clip';
+                    el.innerHTML = `<div class="cthumb"></div>
+                        <div class="cinfo"><div class="tbadge">${mmss(c.start)} – ${mmss(c.end)}</div>
+                        <h3>${c.title}</h3><small>Score ${c.score} · ${c.reason}</small></div>
+                        <div class="cacts"></div>`;
+                    cards[c.id] = el; $('clips').appendChild(el);
+                }
+                if (el.dataset.key !== key) {
+                    el.dataset.key = key;
+                    el.querySelector('.cthumb').innerHTML = c.file ? `<video src="${c.file}" controls playsinline></video>` : 'Rendering…';
+                    el.querySelector('.cacts').innerHTML = c.file ? `<a href="${c.file}" download class="bdl">⬇ Download</a>
+                        ${user ? `<button class="byt" onclick="openM('${jobId}',${c.id},'${esc(c.title)}')">${ytSVG} Post to YouTube</button>` : ''}` : '';
+                }
+            }
+        }
+
+        /* ── Tags ── */
+        function renderTags() {
+            $('tagsWrap').innerHTML = seoTags.map((t, i) => `<span class="tag">${t} <span class="x" onclick="rmTag(${i})">×</span></span>`).join('');
+        }
+        function rmTag(i) { seoTags.splice(i, 1); renderTags() }
+        $('tagInput').onkeydown = e => {
+            if (e.key === 'Enter') { e.preventDefault(); const v = e.target.value.trim(); if (v && !seoTags.includes(v)) { seoTags.push(v); renderTags() } e.target.value = '' }
+        };
+
+        /* ── Upload modal ── */
+        function openM(jid, idx, title) {
+            upTgt = { jid, idx }; $('uTitle').value = title; $('uDesc').value = ''; $('uPriv').value = 'private';
+            seoTags = []; renderTags();
+            $('umod').classList.add('show'); $('ubtn').disabled = false; $('ubtn').textContent = 'Upload to YouTube';
+            $('aiBtn').disabled = false; $('aiBtn').innerHTML = '<span class="ai-badge">AI</span> ✨ Auto-generate viral title, description & tags';
+        }
+        function closeM() { $('umod').classList.remove('show'); upTgt = null }
+
+        /* ── AI SEO generation ── */
+        async function genSeo() {
+            const b = $('aiBtn'); b.disabled = true;
+            b.innerHTML = '<span class="ai-badge">AI</span> <span class="spinner"></span> Generating…';
+            try {
+                const r = await fetch('/api/generate-seo', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clip_title: $('uTitle').value || 'Viral short clip', video_title: videoTitle, language: 'en' })
+                });
+                if (!r.ok) throw new Error((await r.json()).detail || 'Failed');
+                const d = await r.json();
+                $('uTitle').value = d.title || $('uTitle').value;
+                $('uDesc').value = d.description || '';
+                seoTags = d.tags || []; renderTags();
+                b.innerHTML = '<span class="ai-badge">AI</span> ✅ Generated! Click again to regenerate';
+            } catch (e) {
+                b.innerHTML = '<span class="ai-badge">AI</span> ❌ Failed — click to retry';
+                console.error(e);
+            }
+            b.disabled = false;
+        }
+
+        /* ── Upload ── */
+        async function doUpload() {
+            if (!upTgt) return;
+            const b = $('ubtn'); b.disabled = true; b.innerHTML = '<span class="spinner"></span> Uploading…';
+            try {
+                const r = await fetch('/api/upload-to-youtube', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_id: upTgt.jid, clip_index: upTgt.idx, title: $('uTitle').value, description: $('uDesc').value, tags: seoTags, privacy: $('uPriv').value })
+                });
+                if (!r.ok) throw new Error((await r.json()).detail || 'Upload failed');
+                const res = await r.json(); closeM();
+                for (const [id, el] of Object.entries(cards)) {
+                    if (parseInt(id) === upTgt.idx) {
+                        const yt = el.querySelector('.byt');
+                        if (yt) yt.outerHTML = `<div class="up-ok">✓ Posted! <a href="${res.url}" target="_blank">View on YouTube ↗</a></div>`;
+                    }
+                }
+                loadVids();
+            } catch (e) { b.disabled = false; b.textContent = 'Upload to YouTube'; alert('Upload failed: ' + e.message) }
+        }
+
+        $('umod').onclick = e => { if (e.target === $('umod')) closeM() };
+        document.onclick = e => { if (!e.target.closest('.pill')) document.querySelectorAll('.pill-menu').forEach(m => m.classList.remove('show')) };
+
+        checkAuth();
+    </script>
 </body>
+
 </html>
